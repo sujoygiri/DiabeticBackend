@@ -2,6 +2,8 @@ from .serializer import PredictionValueSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+import requests
+from decouple import config
 
 from pathlib import Path
 import joblib
@@ -30,5 +32,15 @@ def prediction(request):
             reshaped_user_data = user_data.reshape(1,-1)
             model = joblib.load(model_location)
             result = model.predict(reshaped_user_data)
-            return Response(result, status=status.HTTP_201_CREATED)
+            return Response(result)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def fetch_news(request):
+    if request.method == 'GET':
+        URL = 'https://newsapi.org/v2/top-headlines'
+        PARAMS = {'country':'in', 'category':'health', 'apiKey': config('NEWS_API_KEY')}
+        r = requests.get(url = URL, params = PARAMS) 
+        response = r.json() 
+        return Response(response['articles'])
+    return Response(status=status.HTTP_400_BAD_REQUEST)
